@@ -362,4 +362,68 @@ test('works with index map', () => {
   is((root as any).source.input.origin(1, 1).file, join(__dirname, 'b.css'))
 })
 
+test('does not load map from outside the from folder', () => {
+  let from = join(dir, 'subdir', 'a.css')
+  mkdirSync(dir)
+  mkdirSync(join(dir, 'subdir'))
+  writeFileSync(join(dir, 'outside.map'), map)
+  let input = parse('a{}\n/*# sourceMappingURL=../outside.map */', { from })
+    .source?.input
+  type(input?.map, 'undefined')
+})
+
+test('loads map from outside the from folder with unsafeMap', () => {
+  let from = join(dir, 'subdir', 'a.css')
+  mkdirSync(dir)
+  mkdirSync(join(dir, 'subdir'))
+  writeFileSync(join(dir, 'outside.map'), map)
+  let input = parse('a{}\n/*# sourceMappingURL=../outside.map */', {
+    from,
+    unsafeMap: true
+  }).source?.input
+  is(input?.map.text, map)
+})
+
+test('does not load relative map without from', () => {
+  let cwd = join(dir, 'subdir')
+  mkdirSync(dir)
+  mkdirSync(cwd)
+  writeFileSync(join(cwd, 'previous.map'), map)
+  let previousCwd = process.cwd()
+  try {
+    process.chdir(cwd)
+    let input = parse('a{}\n/*# sourceMappingURL=previous.map */').source?.input
+    type(input?.map, 'undefined')
+  } finally {
+    process.chdir(previousCwd)
+  }
+})
+
+test('does not load map with absolute path without from', () => {
+  let file = join(dir, 'absolute.map')
+  mkdirSync(dir)
+  writeFileSync(file, map)
+  let input = parse('a{}\n/*# sourceMappingURL=' + file + ' */').source?.input
+  type(input?.map, 'undefined')
+})
+
+test('loads map with absolute path without from with unsafeMap', () => {
+  let file = join(dir, 'absolute.map')
+  mkdirSync(dir)
+  writeFileSync(file, map)
+  let input = parse('a{}\n/*# sourceMappingURL=' + file + ' */', {
+    unsafeMap: true
+  }).source?.input
+  is(input?.map.text, map)
+})
+
+test('does not load map with broken JSON', () => {
+  let from = join(dir, 'a.css')
+  mkdirSync(dir)
+  writeFileSync(join(dir, 'a.map'), 'this is not a JSON source map')
+  let input = parse('a{}\n/*# sourceMappingURL=a.map */', { from }).source
+    ?.input
+  type(input?.map, 'undefined')
+})
+
 test.run()

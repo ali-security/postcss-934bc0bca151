@@ -219,7 +219,7 @@ declare namespace postcss {
   export interface Parser<RootNode = Document | Root> {
     (
       css: { toString(): string } | string,
-      opts?: Pick<ProcessOptions, 'from' | 'map'>
+      opts?: Pick<ProcessOptions, 'from' | 'map' | 'unsafeMap'>
     ): RootNode
   }
 
@@ -338,7 +338,9 @@ declare namespace postcss {
     to?: string
 
     /**
-     * Disable source map file protections.
+     * Disable source map file protections. By default, PostCSS loads
+     * a previous source map from `sourceMappingURL` annotation only when
+     * it points to a `.map` file inside the `from` folder.
      */
     unsafeMap?: boolean
   }
